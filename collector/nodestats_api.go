@@ -118,15 +118,47 @@ type NodeStatsResponse struct {
 			LastFailureTimestamp interface{} `json:"last_failure_timestamp"`
 			Failures             int         `json:"failures"`
 		} `json:"reloads"`
+		Queue struct {
+			Events   int    `json:"events"`
+			Type     string `json:"type"`
+			Capacity struct {
+				PageCapacityInBytes int   `json:"page_capacity_in_bytes"`
+				MaxQueueSizeInBytes int64 `json:"max_queue_size_in_bytes"`
+				MaxUnreadEvents     int   `json:"max_unread_events"`
+			} `json:"capacity"`
+			Data struct {
+				Path             string `json:"path"`
+				FreeSpaceInBytes int64  `json:"free_space_in_bytes"`
+				StorageType      string `json:"storage_type"`
+			} `json:"data"`
+		} `json:"queue"`
 	} `json:"pipeline"`
 }
 
-func getNodeStats(endpoint string, target interface{}) error {
-	response, err := http.Get(endpoint + "/_node/stats")
+type HttpHandler struct {
+	Endpoint string
+}
+
+func (h *HttpHandler) Get() (http.Response, error) {
+	response, err := http.Get(h.Endpoint + "/_node/stats")
+	if err != nil {
+		return http.Response{}, err
+	}
+
+	return *response, nil
+}
+
+type HttpHandlerInterface interface {
+	Get() (http.Response, error)
+}
+
+func getNodeStats(h HttpHandlerInterface, target interface{}) error {
+	response, err := h.Get()
 	if err != nil {
 		log.Errorf("Cannot retrieve metrics: %s", err)
-		return err
+		return nil
 	}
+
 	defer response.Body.Close()
 
 	if err := json.NewDecoder(response.Body).Decode(target); err != nil {
@@ -138,7 +170,12 @@ func getNodeStats(endpoint string, target interface{}) error {
 
 func NodeStats(endpoint string) (NodeStatsResponse, error) {
 	var response NodeStatsResponse
-	err := getNodeStats(endpoint, &response)
+
+	handler := &HttpHandler{
+		Endpoint: endpoint,
+	}
+
+	err := getNodeStats(handler, &response)
 
 	return response, err
 }

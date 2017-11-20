@@ -41,6 +41,11 @@ type NodeStatsCollector struct {
 	PipelinePluginEventsOut      *prometheus.Desc
 	PipelinePluginMatches        *prometheus.Desc
 	PipelinePluginFailures       *prometheus.Desc
+
+	PipelineQueueEvents          *prometheus.Desc
+	PipelineQueuePageCapacity    *prometheus.Desc
+	PipelineQueueMaxQueueSize    *prometheus.Desc
+	PipelineQueueMaxUnreadEvents *prometheus.Desc
 }
 
 func NewNodeStatsCollector(logstash_endpoint string) (error, Collector) {
@@ -235,6 +240,34 @@ func NewNodeStatsCollector(logstash_endpoint string) (error, Collector) {
 			prometheus.BuildFQName(Namespace, subsystem, "plugin_failures_total"),
 			"plugin_failures",
 			[]string{"plugin", "plugin_id", "plugin_type"},
+			nil,
+		),
+
+		PipelineQueueEvents: prometheus.NewDesc(
+			prometheus.BuildFQName(Namespace, subsystem, "queue_events"),
+			"queue_events",
+			nil,
+			nil,
+		),
+
+		PipelineQueuePageCapacity: prometheus.NewDesc(
+			prometheus.BuildFQName(Namespace, subsystem, "queue_page_capacity_bytes"),
+			"queue_page_capacity_bytes",
+			nil,
+			nil,
+		),
+
+		PipelineQueueMaxQueueSize: prometheus.NewDesc(
+			prometheus.BuildFQName(Namespace, subsystem, "queue_max_size_bytes"),
+			"queue_max_size_bytes",
+			nil,
+			nil,
+		),
+
+		PipelineQueueMaxUnreadEvents: prometheus.NewDesc(
+			prometheus.BuildFQName(Namespace, subsystem, "queue_max_unread_events"),
+			"queue_max_unread_events",
+			nil,
 			nil,
 		),
 	}
@@ -555,6 +588,32 @@ func (c *NodeStatsCollector) collect(ch chan<- prometheus.Metric) (*prometheus.D
 			plugin.Name,
 			plugin.ID,
 			"output",
+		)
+	}
+
+	if stats.Pipeline.Queue.Type != "memory" {
+		ch <- prometheus.MustNewConstMetric(
+			c.PipelineQueueEvents,
+			prometheus.CounterValue,
+			float64(stats.Pipeline.Queue.Events),
+		)
+
+		ch <- prometheus.MustNewConstMetric(
+			c.PipelineQueuePageCapacity,
+			prometheus.CounterValue,
+			float64(stats.Pipeline.Queue.Capacity.PageCapacityInBytes),
+		)
+
+		ch <- prometheus.MustNewConstMetric(
+			c.PipelineQueueMaxQueueSize,
+			prometheus.CounterValue,
+			float64(stats.Pipeline.Queue.Capacity.MaxQueueSizeInBytes),
+		)
+
+		ch <- prometheus.MustNewConstMetric(
+			c.PipelineQueueMaxUnreadEvents,
+			prometheus.CounterValue,
+			float64(stats.Pipeline.Queue.Capacity.MaxUnreadEvents),
 		)
 	}
 

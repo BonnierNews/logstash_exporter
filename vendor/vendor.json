@@ -3,6 +3,18 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "vN7CV4KXy4vwuhdpfSRZkkrgYcU=",
+			"path": "github.com/BonnierNews/logstash_exporter",
+			"revision": "d484323191bbfb83a86aa54d389758ca7085049c",
+			"revisionTime": "2017-08-23T06:46:52Z"
+		},
+		{
+			"checksumSHA1": "F+I0hF5d+tjxytntQs9i7Zj9akc=",
+			"path": "github.com/BonnierNews/logstash_exporter/collector",
+			"revision": "d484323191bbfb83a86aa54d389758ca7085049c",
+			"revisionTime": "2017-08-23T06:46:52Z"
+		},
+		{
 			"checksumSHA1": "z9ckOyaoHErgXLQDx514AOMxdeo=",
 			"path": "github.com/Sirupsen/logrus",
 			"revision": "abc6f20dabf4b10195f233ad21ea6c5ba33acae0",
@@ -75,5 +87,5 @@
 			"revisionTime": "2016-04-11T19:08:41Z"
 		}
 	],
-	"rootPath": "github.com/DagensNyheter/logstash_exporter"
+	"rootPath": "github.com/BonnierNews/logstash_exporter"
 }
