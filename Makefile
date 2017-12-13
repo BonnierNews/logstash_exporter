@@ -8,7 +8,7 @@ TARGET          ?= logstash_exporter
 PREFIX          ?= $(shell pwd)
 BIN_DIR         ?= $(shell pwd)
 
-all: format vet build test
+all: clean format vet gometalinter build test
 
 test:
 	@echo ">> running tests"
@@ -29,7 +29,8 @@ build: $(PROMU)
 
 clean:
 	@echo ">> Cleaning up"
-	@$(RM) $(TARGET)
+	@find . -type f -name '*~' -exec rm -fv {} \;
+	@rm -fv $(TARGET)
 
 $(GOPATH)/bin/promu promu:
 	@GOOS=$(shell uname -s | tr A-Z a-z) \

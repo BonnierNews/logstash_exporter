@@ -1,8 +1,8 @@
 {
-  "Disable": ["deadcode", "megacheck"],
+  "Disable": [],
   "Deadline": "6m",
   "EnableGC": true,
-  "Exclude": ["Subprocess launching with variable."],
+  "Exclude": ["prometheus.Handler is deprecated"],
   "Sort": ["linter", "severity", "path", "line"],
   "Vendor": true
 }
