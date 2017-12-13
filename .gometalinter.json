@@ -1,0 +1,8 @@
+{
+  "Disable": ["deadcode", "megacheck"],
+  "Deadline": "6m",
+  "EnableGC": true,
+  "Exclude": ["Subprocess launching with variable."],
+  "Sort": ["linter", "severity", "path", "line"],
+  "Vendor": true
+}
