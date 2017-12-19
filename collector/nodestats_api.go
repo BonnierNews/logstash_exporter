@@ -6,6 +6,7 @@ import (
 	"net/http"
 )
 
+// NodeStatsResponse type
 type NodeStatsResponse struct {
 	Host        string `json:"host"`
 	Version     string `json:"version"`
@@ -135,11 +136,13 @@ type NodeStatsResponse struct {
 	} `json:"pipeline"`
 }
 
-type HttpHandler struct {
+// HTTPHandler type
+type HTTPHandler struct {
 	Endpoint string
 }
 
-func (h *HttpHandler) Get() (http.Response, error) {
+// Get method for HTTPHandler
+func (h *HTTPHandler) Get() (http.Response, error) {
 	response, err := http.Get(h.Endpoint + "/_node/stats")
 	if err != nil {
 		return http.Response{}, err
@@ -148,18 +151,24 @@ func (h *HttpHandler) Get() (http.Response, error) {
 	return *response, nil
 }
 
-type HttpHandlerInterface interface {
+// HTTPHandlerInterface interface
+type HTTPHandlerInterface interface {
 	Get() (http.Response, error)
 }
 
-func getNodeStats(h HttpHandlerInterface, target interface{}) error {
+func getNodeStats(h HTTPHandlerInterface, target interface{}) error {
 	response, err := h.Get()
 	if err != nil {
 		log.Errorf("Cannot retrieve metrics: %s", err)
 		return nil
 	}
 
-	defer response.Body.Close()
+	defer func() {
+		err = response.Body.Close()
+		if err != nil {
+			log.Errorf("Cannot close response body: %v", err)
+		}
+	}()
 
 	if err := json.NewDecoder(response.Body).Decode(target); err != nil {
 		log.Errorf("Cannot parse Logstash response json: %s", err)
@@ -168,10 +177,11 @@ func getNodeStats(h HttpHandlerInterface, target interface{}) error {
 	return nil
 }
 
+// NodeStats function
 func NodeStats(endpoint string) (NodeStatsResponse, error) {
 	var response NodeStatsResponse
 
-	handler := &HttpHandler{
+	handler := &HTTPHandler{
 		Endpoint: endpoint,
 	}
 

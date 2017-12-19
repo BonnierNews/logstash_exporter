@@ -2,11 +2,11 @@
 Prometheus exporter for the metrics available in Logstash since version 5.0.
 
 ## Usage
+
 ```bash
-go get -u github.com/kardianos/govendor
 go get -u github.com/BonnierNews/logstash_exporter
 cd $GOPATH/src/github.com/BonnierNews/logstash_exporter
-govendor build +local
+make
 ./logstash_exporter -exporter.bind_address :1234 -logstash.endpoint http://localhost:1235
 ```
 

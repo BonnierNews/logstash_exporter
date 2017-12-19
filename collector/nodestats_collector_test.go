@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-var noQueueJson = []byte(`
+var noQueueJSON = []byte(`
 {
   "host": "69e7fa935209",
   "version": "5.6.4",
@@ -133,7 +133,7 @@ var noQueueJson = []byte(`
 }
 `)
 
-var queueJson = []byte(`
+var queueJSON = []byte(`
 {
   "pipeline" : {
     "events" : {
@@ -201,14 +201,14 @@ var queueJson = []byte(`
 }
 `)
 
-type MockHttpHandler struct {
-	ReturnJson []byte
+type MockHTTPHandler struct {
+	ReturnJSON []byte
 	Endpoint   string
 }
 
-func (m *MockHttpHandler) Get() (http.Response, error) {
+func (m *MockHTTPHandler) Get() (http.Response, error) {
 	response := &http.Response{
-		Body: ioutil.NopCloser(bytes.NewReader(m.ReturnJson)),
+		Body: ioutil.NopCloser(bytes.NewReader(m.ReturnJSON)),
 	}
 
 	return *response, nil
@@ -217,7 +217,7 @@ func (m *MockHttpHandler) Get() (http.Response, error) {
 func TestPipelineNoQueueStats(t *testing.T) {
 	var response NodeStatsResponse
 
-	m := &MockHttpHandler{ReturnJson: noQueueJson}
+	m := &MockHTTPHandler{ReturnJSON: noQueueJSON}
 	getNodeStats(m, &response)
 
 	if response.Pipeline.Queue.Capacity.MaxUnreadEvents == 12 {
@@ -228,7 +228,7 @@ func TestPipelineNoQueueStats(t *testing.T) {
 func TestPipelineQueueStats(t *testing.T) {
 	var response NodeStatsResponse
 
-	m := &MockHttpHandler{ReturnJson: queueJson}
+	m := &MockHTTPHandler{ReturnJSON: queueJSON}
 	getNodeStats(m, &response)
 
 	if response.Pipeline.Queue.Capacity.MaxUnreadEvents != 12 {

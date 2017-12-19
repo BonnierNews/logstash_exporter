@@ -5,6 +5,7 @@ import (
 	"github.com/prometheus/common/log"
 )
 
+// NodeStatsCollector type
 type NodeStatsCollector struct {
 	endpoint string
 
@@ -48,11 +49,12 @@ type NodeStatsCollector struct {
 	PipelineQueueMaxUnreadEvents *prometheus.Desc
 }
 
-func NewNodeStatsCollector(logstash_endpoint string) (error, Collector) {
+// NewNodeStatsCollector function
+func NewNodeStatsCollector(logstashEndpoint string) (Collector, error) {
 	const subsystem = "node"
 
-	return nil, &NodeStatsCollector{
-		endpoint: logstash_endpoint,
+	return &NodeStatsCollector{
+		endpoint: logstashEndpoint,
 
 		JvmThreadsCount: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "jvm_threads_count"),
@@ -270,9 +272,10 @@ func NewNodeStatsCollector(logstash_endpoint string) (error, Collector) {
 			nil,
 			nil,
 		),
-	}
+	}, nil
 }
 
+// Collect function implements nodestats_collector collector
 func (c *NodeStatsCollector) Collect(ch chan<- prometheus.Metric) error {
 	if desc, err := c.collect(ch); err != nil {
 		log.Error("Failed collecting node metrics", desc, err)
