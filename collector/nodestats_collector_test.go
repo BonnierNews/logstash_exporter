@@ -201,6 +201,66 @@ var queueJSON = []byte(`
 }
 `)
 
+var dlQueueJSON = []byte(`
+{
+  "pipeline" : {
+    "events" : {
+      "duration_in_millis" : 1955,
+      "in" : 100,
+      "filtered" : 100,
+      "out" : 100,
+      "queue_push_duration_in_millis" : 71
+    },
+    "plugins" : {
+      "inputs" : [ {
+        "id" : "729b0efdc657715a4a59103ab2643c010fc46e77-1",
+        "events" : {
+          "out" : 100,
+          "queue_push_duration_in_millis" : 71
+        },
+        "name" : "beats"
+      } ],
+      "filters" : [ {
+        "id" : "729b0efdc657715a4a59103ab2643c010fc46e77-2",
+        "events" : {
+          "duration_in_millis" : 64,
+          "in" : 100,
+          "out" : 100
+        },
+        "matches" : 100,
+        "patterns_per_field" : {
+          "message" : 1
+        },
+        "name" : "grok"
+      } ],
+      "outputs" : [ {
+        "id" : "729b0efdc657715a4a59103ab2643c010fc46e77-3",
+        "events" : {
+          "duration_in_millis" : 1724,
+          "in" : 100,
+          "out" : 100
+        },
+        "name" : "stdout"
+      } ]
+    },
+    "reloads" : {
+      "last_error" : null,
+      "successes" : 2,
+      "last_success_timestamp" : "2017-05-25T02:40:40.974Z",
+      "last_failure_timestamp" : null,
+      "failures" : 0
+    },
+    "queue" : {
+      "type" : "memory"
+    },
+    "dead_letter_queue" : {
+      "queue_size_in_bytes" : 1337
+    },
+    "id" : "main"
+  }
+}
+`)
+
 type MockHTTPHandler struct {
 	ReturnJSON []byte
 	Endpoint   string
@@ -232,6 +292,17 @@ func TestPipelineQueueStats(t *testing.T) {
 	getNodeStats(m, &response)
 
 	if response.Pipeline.Queue.Capacity.MaxUnreadEvents != 12 {
+		t.Fail()
+	}
+}
+
+func TestPipelineDLQueueStats(t *testing.T) {
+	var response NodeStatsResponse
+
+	m := &MockHTTPHandler{ReturnJSON: dlQueueJSON}
+	getNodeStats(m, &response)
+
+	if response.Pipeline.DeadLetterQueue.QueueSizeInBytes != 1337 {
 		t.Fail()
 	}
 }

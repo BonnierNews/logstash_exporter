@@ -47,6 +47,8 @@ type NodeStatsCollector struct {
 	PipelineQueuePageCapacity    *prometheus.Desc
 	PipelineQueueMaxQueueSize    *prometheus.Desc
 	PipelineQueueMaxUnreadEvents *prometheus.Desc
+
+	PipelineDeadLetterQueueSizeInBytes *prometheus.Desc
 }
 
 // NewNodeStatsCollector function
@@ -185,91 +187,98 @@ func NewNodeStatsCollector(logstashEndpoint string) (Collector, error) {
 		PipelineDuration: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "pipeline_duration_seconds_total"),
 			"pipeline_duration_seconds_total",
-			nil,
+			[]string{"pipeline"},
 			nil,
 		),
 
 		PipelineEventsIn: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "pipeline_events_in_total"),
 			"pipeline_events_in_total",
-			nil,
+			[]string{"pipeline"},
 			nil,
 		),
 
 		PipelineEventsFiltered: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "pipeline_events_filtered_total"),
 			"pipeline_events_filtered_total",
-			nil,
+			[]string{"pipeline"},
 			nil,
 		),
 
 		PipelineEventsOut: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "pipeline_events_out_total"),
 			"pipeline_events_out_total",
-			nil,
+			[]string{"pipeline"},
 			nil,
 		),
 
 		PipelinePluginEventsDuration: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "plugin_duration_seconds_total"),
 			"plugin_duration_seconds",
-			[]string{"plugin", "plugin_id", "plugin_type"},
+			[]string{"pipeline", "plugin", "plugin_id", "plugin_type"},
 			nil,
 		),
 
 		PipelinePluginEventsIn: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "plugin_events_in_total"),
 			"plugin_events_in",
-			[]string{"plugin", "plugin_id", "plugin_type"},
+			[]string{"pipeline", "plugin", "plugin_id", "plugin_type"},
 			nil,
 		),
 
 		PipelinePluginEventsOut: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "plugin_events_out_total"),
 			"plugin_events_out",
-			[]string{"plugin", "plugin_id", "plugin_type"},
+			[]string{"pipeline", "plugin", "plugin_id", "plugin_type"},
 			nil,
 		),
 
 		PipelinePluginMatches: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "plugin_matches_total"),
 			"plugin_matches",
-			[]string{"plugin", "plugin_id", "plugin_type"},
+			[]string{"pipeline", "plugin", "plugin_id", "plugin_type"},
 			nil,
 		),
 
 		PipelinePluginFailures: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "plugin_failures_total"),
 			"plugin_failures",
-			[]string{"plugin", "plugin_id", "plugin_type"},
+			[]string{"pipeline", "plugin", "plugin_id", "plugin_type"},
 			nil,
 		),
 
 		PipelineQueueEvents: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "queue_events"),
 			"queue_events",
-			nil,
+			[]string{"pipeline"},
 			nil,
 		),
 
 		PipelineQueuePageCapacity: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "queue_page_capacity_bytes"),
 			"queue_page_capacity_bytes",
-			nil,
+			[]string{"pipeline"},
 			nil,
 		),
 
 		PipelineQueueMaxQueueSize: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "queue_max_size_bytes"),
 			"queue_max_size_bytes",
-			nil,
+			[]string{"pipeline"},
 			nil,
 		),
 
 		PipelineQueueMaxUnreadEvents: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "queue_max_unread_events"),
 			"queue_max_unread_events",
+			[]string{"pipeline"},
 			nil,
+		),
+
+		PipelineDeadLetterQueueSizeInBytes: prometheus.NewDesc(
+			prometheus.BuildFQName(Namespace, subsystem, "dead_letter_queue_size_bytes"),
+			"dead_letter_queue_size_bytes",
+			[]string{"pipeline"},
 			nil,
 		),
 	}, nil
@@ -489,135 +498,172 @@ func (c *NodeStatsCollector) collect(ch chan<- prometheus.Metric) (*prometheus.D
 		float64(stats.Process.CPU.TotalInMillis/1000),
 	)
 
-	ch <- prometheus.MustNewConstMetric(
-		c.PipelineDuration,
-		prometheus.CounterValue,
-		float64(stats.Pipeline.Events.DurationInMillis/1000),
-	)
-
-	ch <- prometheus.MustNewConstMetric(
-		c.PipelineEventsIn,
-		prometheus.CounterValue,
-		float64(stats.Pipeline.Events.In),
-	)
-
-	ch <- prometheus.MustNewConstMetric(
-		c.PipelineEventsFiltered,
-		prometheus.CounterValue,
-		float64(stats.Pipeline.Events.Filtered),
-	)
-
-	ch <- prometheus.MustNewConstMetric(
-		c.PipelineEventsOut,
-		prometheus.CounterValue,
-		float64(stats.Pipeline.Events.Out),
-	)
-
-	for _, plugin := range stats.Pipeline.Plugins.Inputs {
-		ch <- prometheus.MustNewConstMetric(
-			c.PipelinePluginEventsIn,
-			prometheus.CounterValue,
-			float64(plugin.Events.In),
-			plugin.Name,
-			plugin.ID,
-			"input",
-		)
-		ch <- prometheus.MustNewConstMetric(
-			c.PipelinePluginEventsOut,
-			prometheus.CounterValue,
-			float64(plugin.Events.Out),
-			plugin.Name,
-			plugin.ID,
-			"input",
-		)
+	// For backwards compatibility with Logstash 5
+	pipelines := make(map[string]Pipeline)
+	if len(stats.Pipelines) == 0 {
+		pipelines["main"] = stats.Pipeline
+	} else {
+		pipelines = stats.Pipelines
 	}
 
-	for _, plugin := range stats.Pipeline.Plugins.Filters {
+	for pipelineID, pipeline := range pipelines {
 		ch <- prometheus.MustNewConstMetric(
-			c.PipelinePluginEventsDuration,
+			c.PipelineDuration,
 			prometheus.CounterValue,
-			float64(plugin.Events.DurationInMillis/1000),
-			plugin.Name,
-			plugin.ID,
-			"filter",
-		)
-		ch <- prometheus.MustNewConstMetric(
-			c.PipelinePluginEventsIn,
-			prometheus.CounterValue,
-			float64(plugin.Events.In),
-			plugin.Name,
-			plugin.ID,
-			"filter",
-		)
-		ch <- prometheus.MustNewConstMetric(
-			c.PipelinePluginEventsOut,
-			prometheus.CounterValue,
-			float64(plugin.Events.Out),
-			plugin.Name,
-			plugin.ID,
-			"filter",
-		)
-		ch <- prometheus.MustNewConstMetric(
-			c.PipelinePluginMatches,
-			prometheus.CounterValue,
-			float64(plugin.Matches),
-			plugin.Name,
-			plugin.ID,
-			"filter",
-		)
-		ch <- prometheus.MustNewConstMetric(
-			c.PipelinePluginFailures,
-			prometheus.CounterValue,
-			float64(plugin.Failures),
-			plugin.Name,
-			plugin.ID,
-			"filter",
-		)
-	}
-
-	for _, plugin := range stats.Pipeline.Plugins.Outputs {
-		ch <- prometheus.MustNewConstMetric(
-			c.PipelinePluginEventsIn,
-			prometheus.CounterValue,
-			float64(plugin.Events.In),
-			plugin.Name,
-			plugin.ID,
-			"output",
-		)
-		ch <- prometheus.MustNewConstMetric(
-			c.PipelinePluginEventsOut,
-			prometheus.CounterValue,
-			float64(plugin.Events.Out),
-			plugin.Name,
-			plugin.ID,
-			"output",
-		)
-	}
-
-	if stats.Pipeline.Queue.Type != "memory" {
-		ch <- prometheus.MustNewConstMetric(
-			c.PipelineQueueEvents,
-			prometheus.CounterValue,
-			float64(stats.Pipeline.Queue.Events),
+			float64(pipeline.Events.DurationInMillis/1000),
+			pipelineID,
 		)
 
 		ch <- prometheus.MustNewConstMetric(
-			c.PipelineQueuePageCapacity,
+			c.PipelineEventsIn,
 			prometheus.CounterValue,
-			float64(stats.Pipeline.Queue.Capacity.PageCapacityInBytes),
+			float64(pipeline.Events.In),
+			pipelineID,
 		)
 
 		ch <- prometheus.MustNewConstMetric(
-			c.PipelineQueueMaxQueueSize,
+			c.PipelineEventsFiltered,
 			prometheus.CounterValue,
-			float64(stats.Pipeline.Queue.Capacity.MaxQueueSizeInBytes),
+			float64(pipeline.Events.Filtered),
+			pipelineID,
 		)
 
 		ch <- prometheus.MustNewConstMetric(
-			c.PipelineQueueMaxUnreadEvents,
+			c.PipelineEventsOut,
 			prometheus.CounterValue,
-			float64(stats.Pipeline.Queue.Capacity.MaxUnreadEvents),
+			float64(pipeline.Events.Out),
+			pipelineID,
 		)
+
+		for _, plugin := range pipeline.Plugins.Inputs {
+			ch <- prometheus.MustNewConstMetric(
+				c.PipelinePluginEventsIn,
+				prometheus.CounterValue,
+				float64(plugin.Events.In),
+				pipelineID,
+				plugin.Name,
+				plugin.ID,
+				"input",
+			)
+			ch <- prometheus.MustNewConstMetric(
+				c.PipelinePluginEventsOut,
+				prometheus.CounterValue,
+				float64(plugin.Events.Out),
+				pipelineID,
+				plugin.Name,
+				plugin.ID,
+				"input",
+			)
+		}
+
+		for _, plugin := range pipeline.Plugins.Filters {
+			ch <- prometheus.MustNewConstMetric(
+				c.PipelinePluginEventsDuration,
+				prometheus.CounterValue,
+				float64(plugin.Events.DurationInMillis/1000),
+				pipelineID,
+				plugin.Name,
+				plugin.ID,
+				"filter",
+			)
+			ch <- prometheus.MustNewConstMetric(
+				c.PipelinePluginEventsIn,
+				prometheus.CounterValue,
+				float64(plugin.Events.In),
+				pipelineID,
+				plugin.Name,
+				plugin.ID,
+				"filter",
+			)
+			ch <- prometheus.MustNewConstMetric(
+				c.PipelinePluginEventsOut,
+				prometheus.CounterValue,
+				float64(plugin.Events.Out),
+				pipelineID,
+				plugin.Name,
+				plugin.ID,
+				"filter",
+			)
+			ch <- prometheus.MustNewConstMetric(
+				c.PipelinePluginMatches,
+				prometheus.CounterValue,
+				float64(plugin.Matches),
+				pipelineID,
+				plugin.Name,
+				plugin.ID,
+				"filter",
+			)
+			ch <- prometheus.MustNewConstMetric(
+				c.PipelinePluginFailures,
+				prometheus.CounterValue,
+				float64(plugin.Failures),
+				pipelineID,
+				plugin.Name,
+				plugin.ID,
+				"filter",
+			)
+		}
+
+		for _, plugin := range pipeline.Plugins.Outputs {
+			ch <- prometheus.MustNewConstMetric(
+				c.PipelinePluginEventsIn,
+				prometheus.CounterValue,
+				float64(plugin.Events.In),
+				pipelineID,
+				plugin.Name,
+				plugin.ID,
+				"output",
+			)
+			ch <- prometheus.MustNewConstMetric(
+				c.PipelinePluginEventsOut,
+				prometheus.CounterValue,
+				float64(plugin.Events.Out),
+				pipelineID,
+				plugin.Name,
+				plugin.ID,
+				"output",
+			)
+		}
+
+		if pipeline.Queue.Type != "memory" {
+			ch <- prometheus.MustNewConstMetric(
+				c.PipelineQueueEvents,
+				prometheus.CounterValue,
+				float64(pipeline.Queue.Events),
+				pipelineID,
+			)
+
+			ch <- prometheus.MustNewConstMetric(
+				c.PipelineQueuePageCapacity,
+				prometheus.CounterValue,
+				float64(pipeline.Queue.Capacity.PageCapacityInBytes),
+				pipelineID,
+			)
+
+			ch <- prometheus.MustNewConstMetric(
+				c.PipelineQueueMaxQueueSize,
+				prometheus.CounterValue,
+				float64(pipeline.Queue.Capacity.MaxQueueSizeInBytes),
+				pipelineID,
+			)
+
+			ch <- prometheus.MustNewConstMetric(
+				c.PipelineQueueMaxUnreadEvents,
+				prometheus.CounterValue,
+				float64(pipeline.Queue.Capacity.MaxUnreadEvents),
+				pipelineID,
+			)
+		}
+
+		log.Errorf("%v", pipeline.DeadLetterQueue.QueueSizeInBytes)
+		if pipeline.DeadLetterQueue.QueueSizeInBytes != 0 {
+			ch <- prometheus.MustNewConstMetric(
+				c.PipelineDeadLetterQueueSizeInBytes,
+				prometheus.GaugeValue,
+				float64(pipeline.DeadLetterQueue.QueueSizeInBytes),
+				pipelineID,
+			)
+		}
 	}
 
 	return nil, nil
