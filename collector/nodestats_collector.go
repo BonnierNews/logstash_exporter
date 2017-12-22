@@ -655,7 +655,6 @@ func (c *NodeStatsCollector) collect(ch chan<- prometheus.Metric) (*prometheus.D
 			)
 		}
 
-		log.Errorf("%v", pipeline.DeadLetterQueue.QueueSizeInBytes)
 		if pipeline.DeadLetterQueue.QueueSizeInBytes != 0 {
 			ch <- prometheus.MustNewConstMetric(
 				c.PipelineDeadLetterQueueSizeInBytes,
