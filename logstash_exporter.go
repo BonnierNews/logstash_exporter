@@ -36,9 +36,15 @@ func NewLogstashCollector(logstashEndpoint string) (*LogstashCollector, error) {
 		log.Fatalf("Cannot register a new collector: %v", err)
 	}
 
+	nodeInfoCollector, err := collector.NewNodeInfoCollector(logstashEndpoint)
+	if err != nil {
+		log.Fatalf("Cannot register a new collector: %v", err)
+	}
+
 	return &LogstashCollector{
 		collectors: map[string]collector.Collector{
 			"node": nodeStatsCollector,
+			"info": nodeInfoCollector,
 		},
 	}, nil
 }
