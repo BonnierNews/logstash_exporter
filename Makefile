@@ -27,6 +27,10 @@ build: $(PROMU)
 	@echo ">> building binaries"
 	@$(PROMU) build --prefix $(PREFIX)
 
+tarball: $(PROMU)
+	@echo ">> building release tarball"
+	@$(PROMU) tarball --prefix $(PREFIX) $(BIN_DIR)
+
 clean:
 	@echo ">> Cleaning up"
 	@find . -type f -name '*~' -exec rm -fv {} \;
@@ -42,4 +46,4 @@ $(GOPATH)/bin/gometalinter lint:
 		GOARCH=$(subst x86_64,amd64,$(patsubst i%86,386,$(shell uname -m))) \
 		$(GO) get -u github.com/alecthomas/gometalinter
 
-.PHONY: all format vet build test promu clean $(GOPATH)/bin/promu $(GOPATH)/bin/gometalinter lint
+.PHONY: all format vet build test promu tarball clean $(GOPATH)/bin/promu $(GOPATH)/bin/gometalinter lint
