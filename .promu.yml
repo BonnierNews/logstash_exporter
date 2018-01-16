@@ -16,4 +16,3 @@ build:
 tarball:
     files:
         - LICENSE
-        - NOTICE
