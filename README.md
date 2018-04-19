@@ -11,20 +11,35 @@ make
 ```
 
 ### Flags
-Flag | Description | Default
------|-------------|---------
-`--web.listen-address` | Address on which to expose metrics and web interface. | :9198
-`--logstash.endpoint` | The protocol, host and port on which logstash metrics API listens | http://localhost:9600
-`--log.level` | Only log messages with the given severity or above. Valid levels: [debug, info, warn, error, fatal] | info
-`--log.format` | Set the log target and format. Example: "logger:syslog?appname=bob&local=7" or "logger:stdout?json=true" | logger:stderr
-`--version` | Show Application Version | false
+
+```sh
+logstash_exporter --help
+usage: logstash_exporter [<flags>]
+
+Flags:
+  -h, --help              Show context-sensitive help (also try --help-long and
+                          --help-man).
+      --logstash.endpoint="http://localhost:9600"
+                          The protocol, host and port on which logstash metrics
+                          API listens
+      --web.listen-address=":9198"
+                          Address on which to expose metrics and web interface.
+      --log.level="info"  Only log messages with the given severity or above.
+                          Valid levels: [debug, info, warn, error, fatal]
+      --log.format="logger:stderr"
+                          Set the log target and format. Example:
+                          "logger:syslog?appname=bob&local=7" or
+                          "logger:stdout?json=true"
+      --version           Show application version.
+```
 
 ## Implemented metrics
 
 * logstash_exporter_build_info (gauge)
-* logstash_exporter_scrape_duration_seconds (summary)
-* logstash_info_jvm (counter)
-* logstash_info_node (counter)
+* logstash_exporter_scrape_duration_seconds: logstash_exporter: Duration of a scrape job. (summary)
+* logstash_info_jvm: A metric with a constant '1' value labeled by name, version and vendor of the JVM running Logstash. (counter)
+* logstash_info_node: A metric with a constant '1' value labeled by Logstash version. (counter)
+* logstash_info_os: A metric with a constant '1' value labeled by name, arch, version and available_processors to the OS running Logstash. (counter)
 * logstash_node_gc_collection_duration_seconds_total (counter)
 * logstash_node_gc_collection_total (gauge)
 * logstash_node_jvm_threads_count (gauge)
@@ -49,5 +64,5 @@ Flag | Description | Default
 * logstash_node_process_open_filedescriptors (gauge)
 * logstash_node_queue_events (counter)
 * logstash_node_queue_max_size_bytes (counter)
-* logstash_node_queue_max_unread_events (counter)
-* logstash_node_queue_page_capacity_bytes (counter)
+* logstash_node_queue_max_unread_events: queue_max_ (counter)
+* logstash_node_queue_page_capacity_bytes: queue_page_capacity_bytes (counter)
