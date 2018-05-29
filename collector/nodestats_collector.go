@@ -449,7 +449,7 @@ func (c *NodeStatsCollector) collect(ch chan<- prometheus.Metric) (*prometheus.D
 	ch <- prometheus.MustNewConstMetric(
 		c.GCCollectionTimeInMillis,
 		prometheus.CounterValue,
-		float64(stats.Jvm.Gc.Collectors.Old.CollectionTimeInMillis),
+		0.001 * float64(stats.Jvm.Gc.Collectors.Old.CollectionTimeInMillis),
 		"old",
 	)
 
@@ -463,7 +463,7 @@ func (c *NodeStatsCollector) collect(ch chan<- prometheus.Metric) (*prometheus.D
 	ch <- prometheus.MustNewConstMetric(
 		c.GCCollectionTimeInMillis,
 		prometheus.CounterValue,
-		float64(stats.Jvm.Gc.Collectors.Young.CollectionTimeInMillis),
+		0.001 * float64(stats.Jvm.Gc.Collectors.Young.CollectionTimeInMillis),
 		"young",
 	)
 
