@@ -186,6 +186,7 @@ var queueJSON = []byte(`
       "events" : 0,
       "type" : "persisted",
       "capacity" : {
+        "queue_size_in_bytes": 123456,
         "page_capacity_in_bytes" : 262144000,
         "max_queue_size_in_bytes" : 8589934592,
         "max_unread_events" : 12

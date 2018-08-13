@@ -32,21 +32,24 @@ type NodeStatsCollector struct {
 	ProcessMemTotalVirtualInBytes *prometheus.Desc
 	ProcessCPUTotalInMillis       *prometheus.Desc
 
-	PipelineDuration       *prometheus.Desc
-	PipelineEventsIn       *prometheus.Desc
-	PipelineEventsFiltered *prometheus.Desc
-	PipelineEventsOut      *prometheus.Desc
+	PipelineDuration          *prometheus.Desc
+	PipelineQueuePushDuration *prometheus.Desc
+	PipelineEventsIn          *prometheus.Desc
+	PipelineEventsFiltered    *prometheus.Desc
+	PipelineEventsOut         *prometheus.Desc
 
-	PipelinePluginEventsDuration *prometheus.Desc
-	PipelinePluginEventsIn       *prometheus.Desc
-	PipelinePluginEventsOut      *prometheus.Desc
-	PipelinePluginMatches        *prometheus.Desc
-	PipelinePluginFailures       *prometheus.Desc
+	PipelinePluginEventsDuration          *prometheus.Desc
+	PipelinePluginEventsQueuePushDuration *prometheus.Desc
+	PipelinePluginEventsIn                *prometheus.Desc
+	PipelinePluginEventsOut               *prometheus.Desc
+	PipelinePluginMatches                 *prometheus.Desc
+	PipelinePluginFailures                *prometheus.Desc
 
 	PipelineQueueEvents          *prometheus.Desc
 	PipelineQueuePageCapacity    *prometheus.Desc
 	PipelineQueueMaxQueueSize    *prometheus.Desc
 	PipelineQueueMaxUnreadEvents *prometheus.Desc
+	PipelineQueueSizeInBytes     *prometheus.Desc
 
 	PipelineDeadLetterQueueSizeInBytes *prometheus.Desc
 }
@@ -191,6 +194,13 @@ func NewNodeStatsCollector(logstashEndpoint string) (Collector, error) {
 			nil,
 		),
 
+		PipelineQueuePushDuration: prometheus.NewDesc(
+			prometheus.BuildFQName(Namespace, subsystem, "pipeline_queue_push_duration_seconds_total"),
+			"pipeline_queue_push_duration_seconds_total",
+			[]string{"pipeline"},
+			nil,
+		),
+
 		PipelineEventsIn: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "pipeline_events_in_total"),
 			"pipeline_events_in_total",
@@ -215,6 +225,13 @@ func NewNodeStatsCollector(logstashEndpoint string) (Collector, error) {
 		PipelinePluginEventsDuration: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "plugin_duration_seconds_total"),
 			"plugin_duration_seconds",
+			[]string{"pipeline", "plugin", "plugin_id", "plugin_type"},
+			nil,
+		),
+
+		PipelinePluginEventsQueuePushDuration: prometheus.NewDesc(
+			prometheus.BuildFQName(Namespace, subsystem, "plugin_queue_push_duration_seconds_total"),
+			"plugin_queue_push_duration_seconds_total",
 			[]string{"pipeline", "plugin", "plugin_id", "plugin_type"},
 			nil,
 		),
@@ -271,6 +288,13 @@ func NewNodeStatsCollector(logstashEndpoint string) (Collector, error) {
 		PipelineQueueMaxUnreadEvents: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "queue_max_unread_events"),
 			"queue_max_unread_events",
+			[]string{"pipeline"},
+			nil,
+		),
+
+		PipelineQueueSizeInBytes: prometheus.NewDesc(
+			prometheus.BuildFQName(Namespace, subsystem, "queue_size_bytes"),
+			"queue_size_bytes",
 			[]string{"pipeline"},
 			nil,
 		),
@@ -515,6 +539,13 @@ func (c *NodeStatsCollector) collect(ch chan<- prometheus.Metric) (*prometheus.D
 		)
 
 		ch <- prometheus.MustNewConstMetric(
+			c.PipelineQueuePushDuration,
+			prometheus.CounterValue,
+			float64(pipeline.Events.QueuePushDurationInMillis/1000),
+			pipelineID,
+		)
+
+		ch <- prometheus.MustNewConstMetric(
 			c.PipelineEventsIn,
 			prometheus.CounterValue,
 			float64(pipeline.Events.In),
@@ -549,6 +580,15 @@ func (c *NodeStatsCollector) collect(ch chan<- prometheus.Metric) (*prometheus.D
 				c.PipelinePluginEventsOut,
 				prometheus.CounterValue,
 				float64(plugin.Events.Out),
+				pipelineID,
+				plugin.Name,
+				plugin.ID,
+				"input",
+			)
+			ch <- prometheus.MustNewConstMetric(
+				c.PipelinePluginEventsQueuePushDuration,
+				prometheus.CounterValue,
+				float64(plugin.Events.QueuePushDurationInMillis/1000),
 				pipelineID,
 				plugin.Name,
 				plugin.ID,
@@ -623,6 +663,15 @@ func (c *NodeStatsCollector) collect(ch chan<- prometheus.Metric) (*prometheus.D
 				plugin.ID,
 				"output",
 			)
+			ch <- prometheus.MustNewConstMetric(
+				c.PipelinePluginEventsDuration,
+				prometheus.CounterValue,
+				float64(plugin.Events.DurationInMillis/1000),
+				pipelineID,
+				plugin.Name,
+				plugin.ID,
+				"output",
+			)
 		}
 
 		if pipeline.Queue.Type != "memory" {
@@ -651,6 +700,13 @@ func (c *NodeStatsCollector) collect(ch chan<- prometheus.Metric) (*prometheus.D
 				c.PipelineQueueMaxUnreadEvents,
 				prometheus.CounterValue,
 				float64(pipeline.Queue.Capacity.MaxUnreadEvents),
+				pipelineID,
+			)
+
+			ch <- prometheus.MustNewConstMetric(
+				c.PipelineQueueSizeInBytes,
+				prometheus.CounterValue,
+				float64(pipeline.Queue.Capacity.QueueSizeInBytes),
 				pipelineID,
 			)
 		}
