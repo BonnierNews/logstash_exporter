@@ -9,6 +9,6 @@ RUN curl -fsSL -o /usr/local/bin/dep https://github.com/golang/dep/releases/down
         make
 
 FROM busybox:1.27.2-glibc
-COPY --from=golang /go/src/github.com/perimeterx/logstash_exporter/logstash_exporter /
+COPY --from=golang /go/src/github.com/perimeterx/logstash_exporter/logstash_exporter.go /
 EXPOSE 9198
 ENTRYPOINT ["/logstash_exporter"]
