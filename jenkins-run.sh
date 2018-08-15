@@ -13,7 +13,7 @@ docker_login() {
 
 docker_login
 
-IMG=gcr.io/px_docker_repo/px_logstash_exporter
+IMG=gcr.io/px_docker_repo/pxlogstash_exporter
 BUILDTAG=$(git describe --tags --abbrev=1)
 echo ${BUILDTAG} | tee buildtag
 title "docker build ${BUILDTAG}"
