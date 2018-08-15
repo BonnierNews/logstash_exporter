@@ -49,6 +49,8 @@ type NodeStatsCollector struct {
 	PipelineQueueMaxUnreadEvents *prometheus.Desc
 
 	PipelineDeadLetterQueueSizeInBytes *prometheus.Desc
+
+	PipelineBulkRequestsWithErrors *prometheus.Desc
 }
 
 // NewNodeStatsCollector function
@@ -229,6 +231,13 @@ func NewNodeStatsCollector(logstashEndpoint string) (Collector, error) {
 		PipelinePluginEventsOut: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "plugin_events_out_total"),
 			"plugin_events_out",
+			[]string{"pipeline", "plugin", "plugin_id", "plugin_type"},
+			nil,
+		),
+
+		PipelineBulkRequestsWithErrors: prometheus.NewDesc(
+			prometheus.BuildFQName(Namespace, subsystem, "bulk_requests_with_errors"),
+			"bulk_requests_with_errors",
 			[]string{"pipeline", "plugin", "plugin_id", "plugin_type"},
 			nil,
 		),
@@ -618,6 +627,15 @@ func (c *NodeStatsCollector) collect(ch chan<- prometheus.Metric) (*prometheus.D
 				c.PipelinePluginEventsOut,
 				prometheus.CounterValue,
 				float64(plugin.Events.Out),
+				pipelineID,
+				plugin.Name,
+				plugin.ID,
+				"output",
+			)
+			ch <- prometheus.MustNewConstMetric(
+				c.PipelineBulkRequestsWithErrors,
+				prometheus.CounterValue,
+				float64(plugin.BulkRequests.Errors),
 				pipelineID,
 				plugin.Name,
 				plugin.ID,
