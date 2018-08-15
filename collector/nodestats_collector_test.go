@@ -109,6 +109,12 @@ var noQueueJSON = []byte(`
             "in": 0,
             "out": 0
           },
+					"bulk_requests": {
+						"with_errors": 1111,
+						"responses": {
+							"200": 1111
+						}
+					},
           "name": "stdout"
         }
       ]

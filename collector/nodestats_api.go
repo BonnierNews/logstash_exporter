@@ -38,6 +38,9 @@ type Pipeline struct {
 				In  int `json:"in"`
 				Out int `json:"out"`
 			} `json:"events"`
+			BulkRequests struct {
+				Errors int `json:"with_errors"`
+			} `json:"bulk_requests"`
 			Name string `json:"name"`
 		} `json:"outputs"`
 	} `json:"plugins"`

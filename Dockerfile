@@ -12,4 +12,4 @@ FROM busybox:1.27.2-glibc
 COPY --from=golang /go/src/github.com/BonnierNews/logstash_exporter/logstash_exporter /
 LABEL maintainer christoffer.kylvag@bonniernews.se
 EXPOSE 9198
-ENTRYPOINT ["/logstash_exporter"]  
+ENTRYPOINT ["/logstash_exporter"]
