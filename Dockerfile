@@ -8,7 +8,7 @@ RUN curl -fsSL -o /usr/local/bin/dep https://github.com/golang/dep/releases/down
         dep ensure && \
         make
 
-FROM busybox:1.27.2-glibc
+FROM busybox:1.30.0-glibc
 COPY --from=golang /go/src/github.com/BonnierNews/logstash_exporter/logstash_exporter /
 LABEL maintainer christoffer.kylvag@bonniernews.se
 EXPOSE 9198
