@@ -10,9 +10,10 @@ import (
 type NodeInfoCollector struct {
 	endpoint string
 
-	NodeInfos *prometheus.Desc
-	OsInfos   *prometheus.Desc
-	JvmInfos  *prometheus.Desc
+	NodeInfos    *prometheus.Desc
+	OsInfos      *prometheus.Desc
+	JvmInfos     *prometheus.Desc
+	ReloadsInfos *prometheus.Desc
 }
 
 // NewNodeInfoCollector function
@@ -40,6 +41,13 @@ func NewNodeInfoCollector(logstashEndpoint string) (Collector, error) {
 			prometheus.BuildFQName(Namespace, subsystem, "jvm"),
 			"A metric with a constant '1' value labeled by name, version and vendor of the JVM running Logstash.",
 			[]string{"name", "version", "vendor"},
+			nil,
+		),
+
+		ReloadsInfos: prometheus.NewDesc(
+			prometheus.BuildFQName(Namespace, subsystem, "reloads"),
+			"Logstash reloads",
+			[]string{"result"},
 			nil,
 		),
 	}, nil
@@ -84,6 +92,20 @@ func (c *NodeInfoCollector) collect(ch chan<- prometheus.Metric) (*prometheus.De
 		stats.Jvm.VMName,
 		stats.Jvm.VMVersion,
 		stats.Jvm.VMVendor,
+	)
+
+	ch <- prometheus.MustNewConstMetric(
+		c.ReloadsInfos,
+		prometheus.CounterValue,
+		float64(stats.Reloads.Successes),
+		"success",
+	)
+
+	ch <- prometheus.MustNewConstMetric(
+		c.ReloadsInfos,
+		prometheus.CounterValue,
+		float64(stats.Reloads.Failures),
+		"failure",
 	)
 
 	return nil, nil

@@ -7,7 +7,11 @@ type NodeInfoResponse struct {
 	HTTPAddress string `json:"http_address"`
 	ID          string `json:"id"`
 	Name        string `json:"name"`
-	Pipeline    struct {
+	Reloads     struct {
+		Successes int `json:"successes"`
+		Failures  int `json:"failures"`
+	} `json:"reloads"`
+	Pipeline struct {
 		Workers               int  `json:"workers"`
 		BatchSize             int  `json:"batch_size"`
 		BatchDelay            int  `json:"batch_delay"`
@@ -42,7 +46,7 @@ func NodeInfo(endpoint string) (NodeInfoResponse, error) {
 	var response NodeInfoResponse
 
 	handler := &HTTPHandler{
-		Endpoint: endpoint + "/_node",
+		Endpoint: endpoint + "/_node/stats",
 	}
 
 	err := getMetrics(handler, &response)

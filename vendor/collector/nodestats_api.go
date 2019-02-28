@@ -35,9 +35,20 @@ type Pipeline struct {
 		Outputs []struct {
 			ID     string `json:"id"`
 			Events struct {
-				In  int `json:"in"`
-				Out int `json:"out"`
+				DurationInMillis int `json:"duration_in_millis"`
+				In               int `json:"in"`
+				Out              int `json:"out"`
 			} `json:"events"`
+			Documents struct {
+				Successes            int `json:"successes"`
+				RetryableFailures    int `json:"retryable_failures"`
+				NonRetryableFailures int `json:"non_retryable_failures"`
+			} `json:"documents"`
+			BulkRequests struct {
+				Successes  int         `json:"successes"`
+				WithErrors int         `json:"with_errors"`
+				Responses  interface{} `json:"responses"`
+			} `json:"bulk_requests"`
 			Name string `json:"name"`
 		} `json:"outputs"`
 	} `json:"plugins"`
@@ -53,6 +64,7 @@ type Pipeline struct {
 		Type     string `json:"type"`
 		Capacity struct {
 			PageCapacityInBytes int   `json:"page_capacity_in_bytes"`
+			QueueSizeInBytes    int64 `json:"queue_size_in_bytes"`
 			MaxQueueSizeInBytes int64 `json:"max_queue_size_in_bytes"`
 			MaxUnreadEvents     int   `json:"max_unread_events"`
 		} `json:"capacity"`
