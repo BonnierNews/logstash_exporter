@@ -1,11 +1,11 @@
 go:
     cgo: false
 repository:
-    path: github.com/BonnierNews/logstash_exporter
+    path: github.com/wasilak/logstash_exporter
 build:
     binaries:
         - name: logstash_exporter
-    flags: -i -tags 'netgo static_build'
+    flags: -tags 'netgo static_build'
     ldflags: |
         -s
         -X {{repoPath}}/vendor/github.com/prometheus/common/version.Version={{.Version}}

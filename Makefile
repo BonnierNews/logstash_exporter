@@ -23,9 +23,27 @@ gometalinter: $(GOLINTER)
 	@$(GOLINTER) --install --update > /dev/null
 	@$(GOLINTER) --config=./.gometalinter.json ./...
 
-build: $(PROMU)
-	@echo ">> building binaries"
-	@$(PROMU) build --prefix $(PREFIX)
+build: build_linux_amd64 build_linux_arm64 build_darwin_amd64 build_darwin_arm64
+
+build_linux_amd64: $(PROMU)
+	@echo ">> building binaries for amd64"
+	@mkdir -p $(PREFIX)/bin/linux/amd64
+	@GOOS=linux GOARCH=amd64 $(PROMU) build --prefix $(PREFIX)/bin/linux/amd64 logstash_exporter
+
+build_linux_arm64: $(PROMU)
+	@echo ">> building binaries for arm64"
+	@mkdir -p $(PREFIX)/bin/linux/arm64
+	@GOOS=linux GOARCH=arm64 $(PROMU) build --prefix $(PREFIX)/bin/linux/arm64 logstash_exporter
+
+build_darwin_amd64: $(PROMU)
+	@echo ">> building binaries for amd64"
+	@mkdir -p $(PREFIX)/bin/darwin/amd64
+	@GOOS=darwin GOARCH=amd64 $(PROMU) build --prefix $(PREFIX)/bin/darwin/amd64 logstash_exporter
+
+build_darwin_arm64: $(PROMU)
+	@echo ">> building binaries for arm64"
+	@mkdir -p $(PREFIX)/bin/darwin/arm64
+	@GOOS=darwin GOARCH=arm64 $(PROMU) build --prefix $(PREFIX)/bin/darwin/arm64 logstash_exporter
 
 clean:
 	@echo ">> Cleaning up"
